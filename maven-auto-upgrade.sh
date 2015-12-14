@@ -74,13 +74,14 @@ function commitDetails
 	echo -e "${commitDescription}"
 }
 
-typeset version=$( hub --version )
+typeset hubVersion=$( hub --version )
 if [[ ${?} -ne 0 ]]
 then
+	echo "$0 needs GitHub hub command to make create some pull-request (https://hub.github.com)"
 	exit 1
 fi
 
-echo "${version}"
+echo "${hubVersion}"
 
 rm -rf tmp 2>/dev/null
 hub clone $1 tmp
@@ -99,6 +100,8 @@ then
 	exit 1
 fi
 
+typeset returnCode=0
+
 echo "${versionOutput}" | grep -- "->" | grep '${' | while read line
 do
 	echo "Upgrade detected: ${line}"
@@ -106,22 +109,57 @@ do
 	typeset property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
 
 	typeset updateOutput=$( mvn -U versions:update-property -Dproperty="${property}" )
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
 
 	typeset branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
 
 	hub checkout -b "${property}_upgrade_${branchVersionUpgrade}"
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
 
 	hub push origin "${property}_upgrade_${branchVersionUpgrade}"
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
 
 	hub add -u
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
 
 	hub commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")"
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
+
 	hub push
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
 
 	typeset version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
 	hub pull-request  -m "${property} upgrade ${version}" -b "master" -h "${property}_upgrade_${branchVersionUpgrade}"
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+	fi
 
 done
 
-exit 0
+exit "${returnCode}"
