@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+#
+#UsageStart
+#
+# Usage: $0 <https://github.com/account/repository.git> [<branch>]
+#
+#UsageEnd
+
+function usage
+{
+	sed -e '/^#UsageStart/,/^#UsageEnd/!d' -e 's/^#//' -e '/UsageStart/d' $0
+}
 
 function compareVersions
 {
@@ -74,17 +85,36 @@ function commitDetails
 	echo -e "${commitDescription}"
 }
 
+#Main
+
+#GitHub hub check
 typeset hubVersion=$( hub --version )
 if [[ ${?} -ne 0 ]]
 then
-	echo "$0 needs GitHub hub command to make create some pull-request (https://hub.github.com)"
+	echo "$0 needs GitHub hub command to create some pull-request (https://hub.github.com)"
 	exit 1
 fi
 
 echo "${hubVersion}"
 
+#Arguments checking
+if [[ ${#} -lt 1 || ${#} -gt 2 ]]
+then
+	usage
+	exit 1
+
+#help display
+elif [[ "${1}" = "help" || "${1}" = "--help" ]]
+then
+	usage
+	exit 0
+fi
+
+typeset -r gitHubRespositoryUrl="${1}"
+typeset -r gitBranch="${2:master}"
+
 rm -rf tmp 2>/dev/null
-hub clone $1 tmp
+hub clone "${gitHubRespositoryUrl}" tmp
 if [[ ${?} -ne 0 ]]
 then
 	rm -rf tmp 2>/dev/null
@@ -154,7 +184,7 @@ do
 
 	typeset version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
-	hub pull-request  -m "${property} upgrade ${version}" -b "master" -h "${property}_upgrade_${branchVersionUpgrade}"
+	hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}"
 	if [[ "${?}" -ne 0 ]]
 	then
 		returnCode=1
