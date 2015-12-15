@@ -8,7 +8,7 @@
 
 function usage
 {
-	sed -e '/^#UsageStart/,/^#UsageEnd/!d' -e 's/^#//' -e '/UsageStart/d' $0
+	sed -e '/^#UsageStart/,/^#UsageEnd/!d' -e 's/^#//' -e '/^UsageStart/d' -e '/^UsageEnd/d' "${0}" >&2
 }
 
 function compareVersions
@@ -88,14 +88,15 @@ function commitDetails
 #Main
 
 #GitHub hub check
+echo -n "Verify hub versions:..."
 typeset hubVersion=$( hub --version )
 if [[ ${?} -ne 0 ]]
 then
-	echo "$0 needs GitHub hub command to create some pull-request (https://hub.github.com)"
+	echo "$0 needs GitHub hub command to create some pull-request (https://hub.github.com), check your install and the PATH env variable" >&2
 	exit 1
 fi
-
-echo "${hubVersion}"
+echo "[OK]"
+echo "Detected git and hub versions: "${hubVersion}
 
 #Arguments checking
 if [[ ${#} -lt 1 || ${#} -gt 2 ]]
