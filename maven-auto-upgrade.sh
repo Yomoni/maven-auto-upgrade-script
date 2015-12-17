@@ -139,6 +139,14 @@ do
 
 	typeset property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
 
+	#Get back to the pull-request target branch (default: master)
+	hub checkout "${gitBranch}"
+	if [[ "${?}" -ne 0 ]]
+	then
+		returnCode=1
+		continue
+	fi
+
 	typeset updateOutput=$( mvn -U versions:update-property -Dproperty="${property}" )
 	if [[ "${?}" -ne 0 ]]
 	then
