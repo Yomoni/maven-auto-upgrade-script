@@ -112,7 +112,7 @@ then
 fi
 
 typeset -r gitHubRespositoryUrl="${1}"
-typeset -r gitBranch="${2:master}"
+typeset -r gitBranch="${2:-master}"
 
 rm -rf tmp 2>/dev/null
 hub clone "${gitHubRespositoryUrl}" tmp
