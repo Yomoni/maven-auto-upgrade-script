@@ -115,7 +115,7 @@ typeset -r gitHubRespositoryUrl="${1}"
 typeset -r gitBranch="${2:-master}"
 
 rm -rf tmp 2>/dev/null
-hub clone "${gitHubRespositoryUrl}" tmp
+hub clone --depth 1 "${gitHubRespositoryUrl}" tmp
 if [[ ${?} -ne 0 ]]
 then
 	rm -rf tmp 2>/dev/null
