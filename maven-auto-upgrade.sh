@@ -156,14 +156,7 @@ do
 
 	typeset branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
 
-	hub checkout -b "${property}_upgrade_${branchVersionUpgrade}"
-	if [[ "${?}" -ne 0 ]]
-	then
-		returnCode=1
-		continue
-	fi
-
-	hub push origin "${property}_upgrade_${branchVersionUpgrade}"
+	hub checkout --track -b "${property}_upgrade_${branchVersionUpgrade}"
 	if [[ "${?}" -ne 0 ]]
 	then
 		returnCode=1
@@ -184,7 +177,7 @@ do
 		continue
 	fi
 
-	hub push
+	hub push origin "${property}_upgrade_${branchVersionUpgrade}"
 	if [[ "${?}" -ne 0 ]]
 	then
 		returnCode=1
