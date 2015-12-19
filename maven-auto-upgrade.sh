@@ -11,6 +11,7 @@ function usage
 	sed -e '/^#UsageStart/,/^#UsageEnd/!d' -e 's/^#//' -e '/^UsageStart/d' -e '/^UsageEnd/d' "${0}" >&2
 }
 
+#Compare 2 versions and return the most important digit found (1:major, 2:minor, 3:patch, -1:unknown)
 function compareVersions
 {
 	typeset IFS='.'
@@ -42,6 +43,7 @@ function compareVersions
 	return -1
 }
 
+#Function du print the commit message on the standard output
 function commitMessage
 {
 	typeset upgradedProperty="${1}"
@@ -67,6 +69,7 @@ function commitMessage
 	echo ":construction_worker:${arrowEmoji} ${upgradedProperty} upgrade ${versionUpgrade}"
 }
 
+#Function to print the commit details message with updated dependencies on the standard output
 function commitDetails
 {
 	typeset upgradedProperty="${1}"
