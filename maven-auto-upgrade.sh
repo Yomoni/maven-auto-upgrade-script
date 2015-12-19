@@ -87,16 +87,29 @@ function commitDetails
 
 #Main
 
-#GitHub hub check
-echo -n "Verify hub versions:..."
-typeset hubVersion=$( hub --version )
+#git check
+echo -n "Verify git version:..."
+typeset gitVersion=$( git --version 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
-	echo "$0 needs GitHub hub command to create some pull-request (https://hub.github.com), check your install and the PATH env variable" >&2
+	echo "[NOT FOUND]"
+	echo "$0 needs git, check your installation and the PATH environment variable" >&2
 	exit 1
 fi
-echo "[OK]"
-echo "Detected git and hub versions: "${hubVersion}
+echo "[OK] -> ${gitVersion}"
+
+#GitHub hub check (optionnal)
+echo -n "Verifying hub version:..."
+typeset hubVersion=$( hub --version 2>&1 )
+if [[ ${?} -ne 0 ]]
+then
+	gitCommand="git"
+	echo "[NOT FOUND]"
+	echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your installation and the PATH environment variable" >&2
+else
+	gitCommand="hub"
+	echo "[OK] -> "${hubVersion}
+fi
 
 #Arguments checking
 if [[ ${#} -lt 1 || ${#} -gt 2 ]]
@@ -105,7 +118,7 @@ then
 	exit 1
 
 #help display
-elif [[ "${1}" = "help" || "${1}" = "--help" ]]
+elif [[ "${1}" = "-h" || "${1}" = "help" || "${1}" = "--help" ]]
 then
 	usage
 	exit 0
