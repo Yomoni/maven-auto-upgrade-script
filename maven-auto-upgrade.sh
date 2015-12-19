@@ -144,7 +144,7 @@ rm -rf tmp 2>/dev/null
 
 #Clone the target git repository
 echo -n "Cloning $(basename ${gitHubRespositoryUrl} ):..."
-typeset cloneOutput=$( hub clone --depth 1 "${gitHubRespositoryUrl}" tmp 2>&1 )
+typeset cloneOutput=$( ${gitCommand} clone --depth 1 "${gitHubRespositoryUrl}" tmp 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
@@ -171,63 +171,81 @@ fi
 
 typeset returnCode=0
 
+#Loop on each property that can be upgraded
 echo "${versionOutput}" | grep -- "->" | grep '${' | while read line
 do
-	echo "Upgrade detected: ${line}"
-
 	typeset property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
+	typeset versionDelta=$( echo "${line}" | awk '{ print $(NF-2),$(NF-1),$NF }' )
+
+	echo -e "\nUpgrade detected of ${property} property: ${versionDelta}"
 
 	#Get back to the pull-request target branch (default: master)
-	hub checkout "${gitBranch}"
+	echo -n "Checkout branch ${gitBranch}:..."
+	typeset checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${checkoutReturn}"
 		returnCode=1
 		continue
 	fi
+	echo -e "[\033[32mOK\033[0m]"
 
-	typeset updateOutput=$( mvn -U versions:update-property -Dproperty="${property}" )
+	#Do the dependency/plugin upgrade by changing its property with Maven
+	echo -n "Modifying property ${property}:..."
+	typeset updateOutput=$( mvn -U versions:update-property -Dproperty="${property}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${updateOutput}"
 		returnCode=1
 		continue
 	fi
+	echo -e "[\033[32mOK\033[0m]"
 
+	#Create and checkout a new branch for the property upgrade
 	typeset branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
+	echo -n "Create and checkout branch ${branchVersionUpgrade}:..."
+	typeset checkoutReturn=$( ${gitCommand} checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${checkoutReturn}"
+		returnCode=1
+		continue
+	fi
+	echo -e "[\033[32mOK\033[0m]"
 
-	hub checkout --track -b "${property}_upgrade_${branchVersionUpgrade}"
+	${gitCommand} add -u
 	if [[ "${?}" -ne 0 ]]
 	then
 		returnCode=1
 		continue
 	fi
 
-	hub add -u
+	${gitCommand} commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")"
 	if [[ "${?}" -ne 0 ]]
 	then
 		returnCode=1
 		continue
 	fi
 
-	hub commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")"
+	${gitCommand} push origin "${property}_upgrade_${branchVersionUpgrade}"
 	if [[ "${?}" -ne 0 ]]
 	then
 		returnCode=1
 		continue
 	fi
 
-	hub push origin "${property}_upgrade_${branchVersionUpgrade}"
-	if [[ "${?}" -ne 0 ]]
+	if [[ ${gitCommand} = "hub" ]]
 	then
-		returnCode=1
-		continue
-	fi
+		typeset version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
-	typeset version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
-
-	hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}"
-	if [[ "${?}" -ne 0 ]]
-	then
-		returnCode=1
+		hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}"
+		if [[ "${?}" -ne 0 ]]
+		then
+			returnCode=1
+		fi
 	fi
 
 done
