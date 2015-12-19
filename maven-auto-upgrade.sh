@@ -88,19 +88,19 @@ function commitDetails
 #Main
 
 #Git command check
-echo -n "Verify git version:..."
-typeset gitVersion=$( git --version 2>&1 )
+echo -n "Verifying Git version:..."
+typeset -r gitVersion=$( git --version 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
 	echo -e "[\033[31mNOT FOUND\033[0m]"
-	echo "$0 needs git, check your installation and the PATH environment variable" >&2
+	echo "$0 needs Git, check your installation and the PATH environment variable" >&2
 	exit 1
 fi
 echo -e "[\033[32mOK\033[0m] -> ${gitVersion}"
 
 #GitHub hub command check (optionnal)
-echo -n "Verifying hub version:..."
-typeset hubVersion=$( hub --version 2>&1 )
+echo -n "Verifying GitHub Hub version:..."
+typeset -r hubVersion=$( hub --version 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
 	gitCommand="git"
@@ -108,8 +108,20 @@ then
 	echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your installation and the PATH environment variable" >&2
 else
 	gitCommand="hub"
-	echo -e "[\033[32mOK\033[0m] -> "${hubVersion}
+	echo -e "[\033[32mOK\033[0m] -> "$( echo "${hubVersion}" | tail -n 1 )
 fi
+
+#Maven command check
+echo -n "Verifying Maven version:..."
+typeset -r mavenVersion=$( mvn --version 2>&1 )
+if [[ ${?} -ne 0 ]]
+then
+	echo -e "[\033[31mNOT FOUND\033[0m]"
+	echo "${mavenVersion}" >&2
+	echo "$0 needs Maven, check your installation and the PATH environment variable" >&2
+	exit 1
+fi
+echo -e "[\033[32mOK\033[0m] -> "$( echo "${mavenVersion}" | awk '{ print $1,$2,$3 ; exit }' )
 
 #Arguments checking
 if [[ ${#} -lt 1 || ${#} -gt 2 ]]
