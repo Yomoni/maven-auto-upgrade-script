@@ -140,7 +140,10 @@ typeset -r gitHubRespositoryUrl="${1}"
 typeset -r gitBranch="${2:-master}"
 
 #Temporary directory clean up
-rm -rf tmp 2>/dev/null
+if [[ -d tmp ]]
+then
+	rm -r tmp 2>/dev/null
+fi
 
 #Clone the target git repository
 echo -n "Cloning $(basename ${gitHubRespositoryUrl} ):..."
@@ -149,7 +152,7 @@ if [[ ${?} -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
 	echo "${cloneOutput}" >&2
-	rm -rf tmp 2>/dev/null
+	rm -r tmp 2>/dev/null
 	exit 1
 fi
 echo -e "[\033[32mOK\033[0m]"
@@ -157,17 +160,33 @@ echo -e "[\033[32mOK\033[0m]"
 cd tmp 2>/dev/null
 if [[ ${?} -ne 0 ]]
 then
-	
+	echo "Cannot use tmp git clone directory" >&2
 	exit 1
 fi
 
-#Checking new component versions with maven 
+#Checkout the target branch (default: master)
+echo -n "Checkout branch ${gitBranch}:..."
+typeset checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
+if [[ "${?}" -ne 0 ]]
+then
+	echo -e "[\033[31mFAILED\033[0m]"
+	echo "${checkoutReturn}" >&2
+	returnCode=1
+	continue
+fi
+echo -e "[\033[32mOK\033[0m]"
+
+#Checking new component versions with Maven
+echo -n "Checking property version upgrades:..."
 typeset -r versionOutput=$( mvn -U versions:display-plugin-updates  versions:display-property-updates )
 if [[ ${?} -ne 0 ]]
 then
+	echo "${versionOutput}" >&2
 	rm -rf tmp 2>/dev/null
 	exit 1
 fi
+typeset countUpgrade=$( echo "${versionOutput}" | grep -- "->" | grep '${' | wc -l )
+echo -e "[\033[32mOK\033[0m] -> ${countUpgrade} upgrade(s) found"
 
 typeset returnCode=0
 
@@ -185,7 +204,7 @@ do
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${checkoutReturn}"
+		echo "${checkoutReturn}" >&2
 		returnCode=1
 		continue
 	fi
@@ -197,7 +216,7 @@ do
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${updateOutput}"
+		echo "${updateOutput}" >&2
 		returnCode=1
 		continue
 	fi
@@ -210,7 +229,7 @@ do
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${checkoutReturn}"
+		echo "${checkoutReturn}" >&2
 		returnCode=1
 		continue
 	fi
