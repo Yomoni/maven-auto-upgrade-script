@@ -87,28 +87,28 @@ function commitDetails
 
 #Main
 
-#git check
+#Git command check
 echo -n "Verify git version:..."
 typeset gitVersion=$( git --version 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
-	echo "[NOT FOUND]"
+	echo -e "[\033[31mNOT FOUND\033[0m]"
 	echo "$0 needs git, check your installation and the PATH environment variable" >&2
 	exit 1
 fi
-echo "[OK] -> ${gitVersion}"
+echo -e "[\033[32mOK\033[0m] -> ${gitVersion}"
 
-#GitHub hub check (optionnal)
+#GitHub hub command check (optionnal)
 echo -n "Verifying hub version:..."
 typeset hubVersion=$( hub --version 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
 	gitCommand="git"
-	echo "[NOT FOUND]"
+	echo -e "[\033[33mNOT FOUND\033[0m]"
 	echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your installation and the PATH environment variable" >&2
 else
 	gitCommand="hub"
-	echo "[OK] -> "${hubVersion}
+	echo -e "[\033[32mOK\033[0m] -> "${hubVersion}
 fi
 
 #Arguments checking
@@ -123,20 +123,33 @@ then
 	usage
 	exit 0
 fi
-
+#Argument mapping
 typeset -r gitHubRespositoryUrl="${1}"
 typeset -r gitBranch="${2:-master}"
 
+#Temporary directory clean up
 rm -rf tmp 2>/dev/null
-hub clone --depth 1 "${gitHubRespositoryUrl}" tmp
+
+#Clone the target git repository
+echo -n "Cloning $(basename ${gitHubRespositoryUrl} ):..."
+typeset cloneOutput=$( hub clone --depth 1 "${gitHubRespositoryUrl}" tmp 2>&1 )
 if [[ ${?} -ne 0 ]]
 then
+	echo -e "[\033[31mFAILED\033[0m]"
+	echo "${cloneOutput}" >&2
 	rm -rf tmp 2>/dev/null
 	exit 1
 fi
+echo -e "[\033[32mOK\033[0m]"
 
-cd tmp
+cd tmp 2>/dev/null
+if [[ ${?} -ne 0 ]]
+then
+	
+	exit 1
+fi
 
+#Checking new component versions with maven 
 typeset -r versionOutput=$( mvn -U versions:display-plugin-updates  versions:display-property-updates )
 if [[ ${?} -ne 0 ]]
 then
