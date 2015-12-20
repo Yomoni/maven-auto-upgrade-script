@@ -92,8 +92,8 @@ function commitDetails
 
 #Git command check
 echo -n "Verifying Git version:..."
-typeset -r gitVersion=$( git --version 2>&1 )
-if [[ ${?} -ne 0 ]]
+gitVersion=$( git --version 2>&1 )
+if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mNOT FOUND\033[0m]"
 	echo "$0 needs Git, check your installation and the PATH environment variable" >&2
@@ -103,8 +103,8 @@ echo -e "[\033[32mOK\033[0m] -> ${gitVersion}"
 
 #GitHub hub command check (optionnal)
 echo -n "Verifying GitHub Hub version:..."
-typeset -r hubVersion=$( hub --version 2>&1 )
-if [[ ${?} -ne 0 ]]
+hubVersion=$( hub --version 2>&1 )
+if [[ "${?}" -ne 0 ]]
 then
 	gitCommand="git"
 	echo -e "[\033[33mNOT FOUND\033[0m]"
@@ -116,8 +116,8 @@ fi
 
 #Maven command check
 echo -n "Verifying Maven version:..."
-typeset -r mavenVersion=$( mvn --version 2>&1 )
-if [[ ${?} -ne 0 ]]
+mavenVersion=$( mvn --version 2>&1 )
+if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mNOT FOUND\033[0m]"
 	echo "${mavenVersion}" >&2
@@ -127,7 +127,7 @@ fi
 echo -e "[\033[32mOK\033[0m] -> "$( echo "${mavenVersion}" | awk '{ print $1,$2,$3 ; exit }' )
 
 #Arguments checking
-if [[ ${#} -lt 1 || ${#} -gt 2 ]]
+if [[ "${#}" -lt 1 || "${#}" -gt 2 ]]
 then
 	usage
 	exit 1
@@ -145,13 +145,21 @@ typeset -r gitBranch="${2:-master}"
 #Temporary directory clean up
 if [[ -d tmp ]]
 then
-	rm -r tmp 2>/dev/null
+	echo -n "Deleting ${PWD}/tmp directory:..."
+	rmOutput=$( rm -r tmp 0<&- 2>&1)
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${rmOutput}"
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
 fi
 
 #Clone the target git repository
 echo -n "Cloning $(basename ${gitHubRespositoryUrl} ):..."
-typeset cloneOutput=$( ${gitCommand} clone --depth 1 "${gitHubRespositoryUrl}" tmp 2>&1 )
-if [[ ${?} -ne 0 ]]
+cloneOutput=$( ${gitCommand} clone --depth 1 "${gitHubRespositoryUrl}" tmp 2>&1 )
+if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
 	echo "${cloneOutput}" >&2
@@ -161,7 +169,7 @@ fi
 echo -e "[\033[32mOK\033[0m]"
 
 cd tmp 2>/dev/null
-if [[ ${?} -ne 0 ]]
+if [[ "${?}" -ne 0 ]]
 then
 	echo "Cannot use tmp git clone directory" >&2
 	exit 1
@@ -169,7 +177,7 @@ fi
 
 #Checkout the target branch (default: master)
 echo -n "Checkout branch ${gitBranch}:..."
-typeset checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
+checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
 if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
@@ -181,8 +189,8 @@ echo -e "[\033[32mOK\033[0m]"
 
 #Checking new component versions with Maven
 echo -n "Checking property version upgrades:..."
-typeset -r versionOutput=$( mvn -U versions:display-plugin-updates  versions:display-property-updates )
-if [[ ${?} -ne 0 ]]
+versionOutput=$( mvn -U versions:display-plugin-updates  versions:display-property-updates 2>&1 )
+if [[ "${?}" -ne 0 ]]
 then
 	echo "${versionOutput}" >&2
 	rm -rf tmp 2>/dev/null
@@ -203,7 +211,7 @@ do
 
 	#Get back to the pull-request target branch (default: master)
 	echo -n "Checkout branch ${gitBranch}:..."
-	typeset checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
+	checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -215,7 +223,7 @@ do
 
 	#Do the dependency/plugin upgrade by changing its property with Maven
 	echo -n "Modifying property ${property}:..."
-	typeset updateOutput=$( mvn -U versions:update-property -Dproperty="${property}" 2>&1 )
+	updateOutput=$( mvn -U versions:update-property -Dproperty="${property}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -228,7 +236,7 @@ do
 	#Create and checkout a new branch for the property upgrade
 	typeset branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
 	echo -n "Create and checkout branch ${branchVersionUpgrade}:..."
-	typeset checkoutReturn=$( ${gitCommand} checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
+	checkoutReturn=$( ${gitCommand} checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -259,7 +267,7 @@ do
 		continue
 	fi
 
-	if [[ ${gitCommand} = "hub" ]]
+	if [[ "${gitCommand}" = "hub" ]]
 	then
 		typeset version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
