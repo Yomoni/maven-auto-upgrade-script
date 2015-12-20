@@ -14,9 +14,9 @@ function usage
 #Compare 2 versions and return the most important digit found (1:major, 2:minor, 3:patch, -1:unknown)
 function compareVersions
 {
-	typeset IFS='.'
-	typeset -a version1=( $1 )
-	typeset -a version2=( $3 )
+	declare IFS='.'
+	declare -a version1=( $1 )
+	declare -a version2=( $3 )
 
 	for (( n=0; n<4; n+=1 ))
 	do
@@ -46,23 +46,23 @@ function compareVersions
 #Function du print the commit message on the standard output
 function commitMessage
 {
-	typeset upgradedProperty="${1}"
-	typeset upgradeOutput="${2}"
+	declare upgradedProperty="${1}"
+	declare upgradeOutput="${2}"
 
-	typeset versionUpgrade=$( echo "${upgradeOutput}" | grep '^\[INFO\] Updated ${'"${upgradedProperty}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
+	declare versionUpgrade=$( echo "${upgradeOutput}" | grep '^\[INFO\] Updated ${'"${upgradedProperty}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
 	#Version comparaison for Emoji arrow type
 	compareVersions ${versionUpgrade}
-	typeset versionDelta="${?}"
+	declare versionDelta="${?}"
 	if [[ "${versionDelta}" -eq 0 ]]
 	then
-		typeset arrowEmoji=":arrow_double_up:"
+		declare arrowEmoji=":arrow_double_up:"
 	elif [[ "${versionDelta}" -eq 2 ]]
 	then
-		typeset arrowEmoji=":arrow_up_small:"
+		declare arrowEmoji=":arrow_up_small:"
 	#Default Emoji
 	else
-		typeset arrowEmoji=":arrow_up:"
+		declare arrowEmoji=":arrow_up:"
 	fi
 
 	#print the git commit message on the standard output
@@ -72,13 +72,13 @@ function commitMessage
 #Function to print the commit details message with updated dependencies on the standard output
 function commitDetails
 {
-	typeset upgradedProperty="${1}"
-	typeset upgradeOutput="${2}"
+	declare upgradedProperty="${1}"
+	declare upgradeOutput="${2}"
 
-	typeset versionUpgrade=$( echo "${upgradeOutput}" | grep '^\[INFO\] Updated ${'"${upgradedProperty}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
+	declare versionUpgrade=$( echo "${upgradeOutput}" | grep '^\[INFO\] Updated ${'"${upgradedProperty}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
-	typeset commitDescription="Upgraded artifact details:\n"
-	typeset upgradedArtifactDetails=$( echo "${upgradeOutput}" | grep "^\[INFO\] artifact " | grep -o "[^ ]*:[^ ]*:[^ ]*" | sort -u )
+	declare commitDescription="Upgraded artifact details:\n"
+	declare upgradedArtifactDetails=$( echo "${upgradeOutput}" | grep "^\[INFO\] artifact " | grep -o "[^ ]*:[^ ]*:[^ ]*" | sort -u )
 	while read line
 	do
 		commitDescription="${commitDescription}${line} ${versionUpgrade}\n"
@@ -139,13 +139,13 @@ then
 	exit 0
 fi
 #Argument mapping
-typeset -r gitHubRespositoryUrl="${1}"
-typeset -r gitBranch="${2:-master}"
+declare -r gitHubRespositoryUrl="${1}"
+declare -r gitBranch="${2:-master}"
 
 #Temporary directory clean up
-if [[ -d tmp ]]
+if [[ -e tmp ]]
 then
-	echo -n "Deleting ${PWD}/tmp directory:..."
+	echo -n "Deleting existing ${PWD}/tmp file-directory:..."
 	rmOutput=$( rm -r tmp 0<&- 2>&1)
 	if [[ "${?}" -ne 0 ]]
 	then
@@ -163,7 +163,6 @@ if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
 	echo "${cloneOutput}" >&2
-	rm -r tmp 2>/dev/null
 	exit 1
 fi
 echo -e "[\033[32mOK\033[0m]"
@@ -171,7 +170,7 @@ echo -e "[\033[32mOK\033[0m]"
 cd tmp 2>/dev/null
 if [[ "${?}" -ne 0 ]]
 then
-	echo "Cannot use tmp git clone directory" >&2
+	echo "Cannot go into tmp git clone directory" >&2
 	exit 1
 fi
 
@@ -182,8 +181,7 @@ if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
 	echo "${checkoutReturn}" >&2
-	returnCode=1
-	continue
+	exit 1
 fi
 echo -e "[\033[32mOK\033[0m]"
 
@@ -192,22 +190,22 @@ echo -n "Checking property version upgrades:..."
 versionOutput=$( mvn -U versions:display-plugin-updates  versions:display-property-updates 2>&1 )
 if [[ "${?}" -ne 0 ]]
 then
+	echo -e "[\033[31mFAILED\033[0m]"
 	echo "${versionOutput}" >&2
-	rm -rf tmp 2>/dev/null
 	exit 1
 fi
-typeset countUpgrade=$( echo "${versionOutput}" | grep -- "->" | grep '${' | wc -l )
+declare -ri countUpgrade=$( echo "${versionOutput}" | grep -- "->" | grep '${' | wc -l )
 echo -e "[\033[32mOK\033[0m] -> ${countUpgrade} upgrade(s) found"
 
-typeset returnCode=0
+typeset -i scriptReturnCode=0
 
 #Loop on each property that can be upgraded
 echo "${versionOutput}" | grep -- "->" | grep '${' | while read line
 do
-	typeset property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
-	typeset versionDelta=$( echo "${line}" | awk '{ print $(NF-2),$(NF-1),$NF }' )
+	declare property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
+	declare versionDelta=$( echo "${line}" | awk '{ print $(NF-2),$(NF-1),$NF }' )
 
-	echo -e "\nUpgrade detected of ${property} property: ${versionDelta}"
+	echo -e "\nUpgrade of ${property} property: ${versionDelta}"
 
 	#Get back to the pull-request target branch (default: master)
 	echo -n "Checkout branch ${gitBranch}:..."
@@ -216,7 +214,7 @@ do
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "${checkoutReturn}" >&2
-		returnCode=1
+		scriptReturnCode=1
 		continue
 	fi
 	echo -e "[\033[32mOK\033[0m]"
@@ -228,20 +226,20 @@ do
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "${updateOutput}" >&2
-		returnCode=1
+		scriptReturnCode=1
 		continue
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
 	#Create and checkout a new branch for the property upgrade
-	typeset branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
+	declare branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
 	echo -n "Create and checkout branch ${branchVersionUpgrade}:..."
 	checkoutReturn=$( ${gitCommand} checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "${checkoutReturn}" >&2
-		returnCode=1
+		scriptReturnCode=1
 		continue
 	fi
 	echo -e "[\033[32mOK\033[0m]"
@@ -249,35 +247,35 @@ do
 	${gitCommand} add -u
 	if [[ "${?}" -ne 0 ]]
 	then
-		returnCode=1
+		scriptReturnCode=1
 		continue
 	fi
 
 	${gitCommand} commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")"
 	if [[ "${?}" -ne 0 ]]
 	then
-		returnCode=1
+		scriptReturnCode=1
 		continue
 	fi
 
 	${gitCommand} push origin "${property}_upgrade_${branchVersionUpgrade}"
 	if [[ "${?}" -ne 0 ]]
 	then
-		returnCode=1
+		scriptReturnCode=1
 		continue
 	fi
 
 	if [[ "${gitCommand}" = "hub" ]]
 	then
-		typeset version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
+		declare version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
 		hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}"
 		if [[ "${?}" -ne 0 ]]
 		then
-			returnCode=1
+			scriptReturnCode=1
 		fi
 	fi
 
 done
 
-exit "${returnCode}"
+exit "${scriptReturnCode}"
