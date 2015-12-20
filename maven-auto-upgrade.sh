@@ -161,7 +161,7 @@ fi
 
 #Clone the target git repository
 echo -n "Cloning $(basename ${gitHubRespositoryUrl} ):..."
-cloneOutput=$( ${gitCommand} clone --depth 1 "${gitHubRespositoryUrl}" tmp 2>&1 )
+cloneOutput=$( ${gitCommand} clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" tmp 2>&1 )
 if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
@@ -176,17 +176,6 @@ then
 	echo "Cannot go into tmp git clone directory" >&2
 	exit 1
 fi
-
-#Checkout the target branch (default: master)
-echo -n "Checkout branch ${gitBranch}:..."
-checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
-if [[ "${?}" -ne 0 ]]
-then
-	echo -e "[\033[31mFAILED\033[0m]"
-	echo "${checkoutReturn}" >&2
-	exit 1
-fi
-echo -e "[\033[32mOK\033[0m]"
 
 #Checking new component versions with Maven
 echo -n "Checking property version upgrades:..."
@@ -210,8 +199,19 @@ do
 
 	echo -e "\nUpgrading ${property} property from $( echo ${versionDelta} | sed 's/->/to/' )"
 
+	#Check the existance of the remote branch before
+	declare targetbranchUpgrade="${property}_upgrade_"$( echo "${versionDelta}" | sed -e 's/ -> /_to_/g' )
+	echo -n "Checking existence of the remote branch ${targetbranchUpgrade}:..."
+	${gitCommand} ls-remote --heads 2>&1 | grep "${targetbranchUpgrade}" >/dev/null
+	if [[ "${?}" -eq 0 ]]
+	then
+		echo -e "[\033[33mALREADY EXISTS\033[0m] -> skipping this upgrade"
+		continue
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
 	#Get back to the pull-request target branch (default: master)
-	echo -n "Checkout branch ${gitBranch}:..."
+	echo -n "Checkout of main branch ${gitBranch}:..."
 	checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
