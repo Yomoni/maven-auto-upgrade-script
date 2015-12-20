@@ -6,6 +6,9 @@
 #
 #UsageEnd
 
+#Disable git command prompt (since git 2.3)
+export export GIT_TERMINAL_PROMPT=0
+
 function usage
 {
 	sed -e '/^#UsageStart/,/^#UsageEnd/!d' -e 's/^#//' -e '/^UsageStart/d' -e '/^UsageEnd/d' "${0}" >&2
@@ -205,7 +208,7 @@ do
 	declare property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
 	declare versionDelta=$( echo "${line}" | awk '{ print $(NF-2),$(NF-1),$NF }' )
 
-	echo -e "\nUpgrade of ${property} property: ${versionDelta}"
+	echo -e "\nUpgrading ${property} property from $( echo ${versionDelta} | sed 's/->/to/' )"
 
 	#Get back to the pull-request target branch (default: master)
 	echo -n "Checkout branch ${gitBranch}:..."
@@ -244,36 +247,53 @@ do
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
-	${gitCommand} add -u
+	echo -n "Adding modified pom.xml to commit files:..."
+	gitAddReturn=$( ${gitCommand} add -u )
 	if [[ "${?}" -ne 0 ]]
 	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${gitAddReturn}" >&2
 		scriptReturnCode=1
 		continue
 	fi
+	echo -e "[\033[32mOK\033[0m]"
 
-	${gitCommand} commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")"
+	echo -n "Commiting modified pom.xml files:..."
+	gitCommitReturn=$( ${gitCommand} commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${gitCommitReturn}" >&2
 		scriptReturnCode=1
 		continue
 	fi
+	echo -e "[\033[32mOK\033[0m]"
 
-	${gitCommand} push origin "${property}_upgrade_${branchVersionUpgrade}"
+	echo -n "Pushing the commit to the git repository:..."
+	gitPushReturn=$( ${gitCommand} push origin "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${gitPushReturn}" >&2
 		scriptReturnCode=1
 		continue
 	fi
+	echo -e "[\033[32mOK\033[0m]"
 
 	if [[ "${gitCommand}" = "hub" ]]
 	then
 		declare version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
-		hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}"
+		echo -n "Creating the associated GitHub pull-request:..."
+		hubPullRequestReturn=$( hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 		if [[ "${?}" -ne 0 ]]
 		then
+			echo -e "[\033[31mFAILED\033[0m]"
+			echo "${hubPullRequestReturn}" >&2
 			scriptReturnCode=1
 		fi
+		echo -e "[\033[32mOK\033[0m]"
+		echo "${hubPullRequestReturn}" >&2
 	fi
 
 done
