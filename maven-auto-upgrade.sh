@@ -160,7 +160,7 @@ then
 fi
 
 #Clone the target git repository
-echo -n "Cloning $(basename ${gitHubRespositoryUrl} ):..."
+echo -n "Cloning $(echo ${gitHubRespositoryUrl} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
 cloneOutput=$( ${gitCommand} clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" tmp 2>&1 )
 if [[ "${?}" -ne 0 ]]
 then
