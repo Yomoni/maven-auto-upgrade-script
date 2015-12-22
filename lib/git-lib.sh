@@ -106,11 +106,11 @@ function environmentCheck
 	hubVersion=$( hub --version 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
-		gitCommand="git"
+		export gitCommand="git"
 		echo -e "[\033[33mNOT FOUND\033[0m]"
 		echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your installation and the PATH environment variable" >&2
 	else
-		gitCommand="hub"
+		export gitCommand="hub"
 		echo -e "[\033[32mOK\033[0m] -> "$( echo "${hubVersion}" | tail -n 1 )
 	fi
 
@@ -127,6 +127,6 @@ function environmentCheck
 	echo -e "[\033[32mOK\033[0m] -> "$( echo "${mavenVersion}" | awk '{ print $1,$2,$3 ; exit }' )
 
 	#Flag the environment check
-	environmentChecked=OK
+	export environmentChecked=OK
 	return 0
 }
