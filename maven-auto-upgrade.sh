@@ -36,12 +36,13 @@ fi
 #Argument mapping
 declare -r gitHubRespositoryUrl="${1}"
 declare -r gitBranch="${2:-master}"
+declare -r cloneDirectory=$( basename "${gitHubRespositoryUrl%.git}" )
 
 #Temporary directory clean up
-if [[ -e tmp ]]
+if [[ -e "${cloneDirectory}" ]]
 then
-	echo -n "Deleting existing ${PWD}/tmp file-directory:..."
-	rmOutput=$( rm -r tmp 0<&- 2>&1)
+	echo -n "Deleting existing ${PWD}/${cloneDirectory} file-directory:..."
+	rmOutput=$( rm -r "${cloneDirectory}" 0<&- 2>&1)
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -53,7 +54,7 @@ fi
 
 #Clone the target git repository
 echo -n "Cloning $(echo ${gitHubRespositoryUrl} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
-cloneOutput=$( ${gitCommand} clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" tmp 2>&1 )
+cloneOutput=$( ${gitCommand} clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" "${cloneDirectory}" 2>&1 )
 if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
@@ -62,10 +63,10 @@ then
 fi
 echo -e "[\033[32mOK\033[0m]"
 
-cd tmp 2>/dev/null
+cd "${cloneDirectory}" 2>/dev/null
 if [[ "${?}" -ne 0 ]]
 then
-	echo "Cannot go into tmp git clone directory" >&2
+	echo "Cannot go into ${cloneDirectory} git clone directory" >&2
 	exit 1
 fi
 
