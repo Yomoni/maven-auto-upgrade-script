@@ -38,7 +38,7 @@ declare -r gitHubRespositoryUrl="${1}"
 declare -r gitBranch="${2:-master}"
 declare -r cloneDirectory=$( basename "${gitHubRespositoryUrl%.git}" )
 
-#Temporary directory clean up
+#Clone directory clean up
 if [[ -e "${cloneDirectory}" ]]
 then
 	echo -n "Deleting existing ${PWD}/${cloneDirectory} file-directory:..."
@@ -46,7 +46,7 @@ then
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${rmOutput}"
+		echo "${rmOutput}" >&2
 		exit 1
 	fi
 	echo -e "[\033[32mOK\033[0m]"
@@ -188,11 +188,35 @@ do
 			echo -e "[\033[31mFAILED\033[0m]"
 			echo "${hubPullRequestReturn}" >&2
 			scriptReturnCode=1
+			continue
 		fi
 		echo -e "[\033[32mOK\033[0m] -> ${hubPullRequestReturn}"
 	else
 		echo "Creating the associated GitHub pull-request:...[[\033[33mGitHub hub command not installed or found\033[0m]"
 	fi
+
+	#Clone directory clean up
+	#Return to the script directory
+	echo -n "Deleting clone ${scriptDir}/${cloneDirectory} directory:..."
+	cd "${scriptDir}"
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "Cannot return into ${scriptDir} script directory" >&2
+		scriptReturnCode=1
+		continue
+	fi
+
+	#Delete the clone directory
+	rmOutput=$( rm -r "${cloneDirectory}" 0<&- 2>&1)
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${rmOutput}" >&2
+		scriptReturnCode=1
+		continue
+	fi
+	echo -e "[\033[32mOK\033[0m]"
 
 done
 
