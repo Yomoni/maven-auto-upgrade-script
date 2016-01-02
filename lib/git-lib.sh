@@ -1,4 +1,7 @@
 
+#Disable git command prompt (since git 2.3)
+export export GIT_TERMINAL_PROMPT=0
+
 function usage
 {
 	sed -e '/^#UsageStart/,/^#UsageEnd/!d' -e 's/^#//' -e '/^UsageStart/d' -e '/^UsageEnd/d' "${0}" >&2
@@ -92,34 +95,41 @@ function environmentCheck
 
 	#Git command check
 	echo -n "Verifying Git version:..."
-	gitVersion=$( git --version 2>&1 )
+	gitVersionOutput=$( git --version 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mNOT FOUND\033[0m]"
 		echo "$0 needs Git, check your installation and the PATH environment variable" >&2
 		return 1
 	fi
-	echo -e "[\033[32mOK\033[0m] -> "$( echo "${gitVersion}" | grep "^git " )
+	gitVersion=$( echo "${gitVersionOutput}" | grep "^git " | cut -d' ' -f 3 )
+	if [[ "${gitVersion}" < "2.3" ]]
+	then
+		echo -e "[\033[33mOLD VERSION DETECTED\033[0m] -> "$( echo "${gitVersionOutput}" | grep "^git " )
+		echo "$0 optionaly needs git 2.3 version or greater for non-interactive git commands by using GIT_TERMINAL_PROMPT=0" >&2
+	else
+		echo -e "[\033[32mOK\033[0m] -> "$( echo "${gitVersionOutput}" | grep "^git " )
+	fi
 
 	#GitHub hub command check (optional)
 	echo -n "Verifying GitHub Hub version:..."
-	#Check hub command as git alias/command
-	echo "${gitVersion}" | grep "^hub " >/dev/null
+	#Check hub command as git alias (if sourced or global one)
+	echo "${gitVersionOutput}" | grep "^hub " >/dev/null
 	if [[ "${?}" -eq 0 ]]
 	then
-		echo -e "[\033[32mOK\033[0m] found into git command -> "$( echo "${gitVersion}" | grep "^hub " )
+		echo -e "[\033[32mOK\033[0m] found into git command -> "$( echo "${gitVersionOutput}" | grep "^hub " )
 		export hubCommand="git"
 
 	#Test hub as an external command (default installation)
 	else
-		hubVersion=$( hub --version 2>&1 )
+		hubVersionOutput=$( hub --version 2>&1 )
 		if [[ "${?}" -ne 0 ]]
 		then
 			echo -e "[\033[33mNOT FOUND\033[0m]"
-			echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your GitHub Hub installation and the PATH environment variable" >&2
+			echo "$0 optionaly needs GitHub hub command to create some pull-request (https://hub.github.com), check your GitHub Hub installation and the PATH environment variable" >&2
 		else
 			export hubCommand="hub"
-			echo -e "[\033[32mOK\033[0m] found hub command -> "$( echo "${hubVersion}" | grep "^hub " )
+			echo -e "[\033[32mOK\033[0m] found hub command -> "$( echo "${hubVersionOutput}" | grep "^hub " )
 		fi
 	fi
 

@@ -6,9 +6,6 @@
 #
 #UsageEnd
 
-#Disable git command prompt (since git 2.3)
-export export GIT_TERMINAL_PROMPT=0
-
 cd $( dirname "${0}")
 typeset -r scriptDir="${PWD}"
 source "${scriptDir}/lib/git-lib.sh"
