@@ -99,19 +99,28 @@ function environmentCheck
 		echo "$0 needs Git, check your installation and the PATH environment variable" >&2
 		return 1
 	fi
-	echo -e "[\033[32mOK\033[0m] -> ${gitVersion}"
+	echo -e "[\033[32mOK\033[0m] -> "$( echo "${gitVersion}" | grep "^git " )
 
-	#GitHub hub command check (optionnal)
+	#GitHub hub command check (optional)
 	echo -n "Verifying GitHub Hub version:..."
-	hubVersion=$( hub --version 2>&1 )
-	if [[ "${?}" -ne 0 ]]
+	#Check hub command as git alias/command
+	echo "${gitVersion}" | grep "^hub " >/dev/null
+	if [[ "${?}" -eq 0 ]]
 	then
-		export gitCommand="git"
-		echo -e "[\033[33mNOT FOUND\033[0m]"
-		echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your installation and the PATH environment variable" >&2
+		echo -e "[\033[32mOK\033[0m] found into git command -> "$( echo "${gitVersion}" | grep "^hub " )
+		export hubCommand="git"
+
+	#Test hub as an external command (default installation)
 	else
-		export gitCommand="hub"
-		echo -e "[\033[32mOK\033[0m] -> "$( echo "${hubVersion}" | tail -n 1 )
+		hubVersion=$( hub --version 2>&1 )
+		if [[ "${?}" -ne 0 ]]
+		then
+			echo -e "[\033[33mNOT FOUND\033[0m]"
+			echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your GitHub Hub installation and the PATH environment variable" >&2
+		else
+			export hubCommand="hub"
+			echo -e "[\033[32mOK\033[0m] found hub command -> "$( echo "${hubVersion}" | grep "^hub " )
+		fi
 	fi
 
 	#Maven command check

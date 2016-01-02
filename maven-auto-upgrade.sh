@@ -56,7 +56,7 @@ fi
 
 #Clone the target git repository
 echo -n "Cloning $(echo ${gitHubRespositoryUrl} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
-cloneOutput=$( ${gitCommand} clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" "${cloneDirectory}" 2>&1 )
+cloneOutput=$( git clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" "${cloneDirectory}" 2>&1 )
 if [[ "${?}" -ne 0 ]]
 then
 	echo -e "[\033[31mFAILED\033[0m]"
@@ -98,7 +98,7 @@ do
 	#Check the existance of the remote branch before
 	declare targetbranchUpgrade="${property}_upgrade_"$( echo "${versionDelta}" | sed -e 's/ -> /_to_/g' )
 	echo -n "Checking existence of the remote branch ${targetbranchUpgrade}:..."
-	${gitCommand} ls-remote --heads 2>&1 | grep "${targetbranchUpgrade}" >/dev/null
+	git ls-remote --heads 2>&1 | grep "${targetbranchUpgrade}" >/dev/null
 	if [[ "${?}" -eq 0 ]]
 	then
 		echo -e "[\033[33mALREADY EXISTS\033[0m] -> skipping this upgrade"
@@ -108,7 +108,7 @@ do
 
 	#Get back to the pull-request target branch (default: master)
 	echo -n "Checkout of main branch ${gitBranch}:..."
-	checkoutReturn=$( ${gitCommand} checkout "${gitBranch}" 2>&1 )
+	checkoutReturn=$( git checkout "${gitBranch}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -133,7 +133,7 @@ do
 	#Create and checkout a new branch for the property upgrade
 	declare branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
 	echo -n "Create and checkout branch ${branchVersionUpgrade}:..."
-	checkoutReturn=$( ${gitCommand} checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
+	checkoutReturn=$( git checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -145,7 +145,7 @@ do
 
 	#Add modified pom files to staged files for the commit
 	echo -n "Adding modified pom.xml to commit files:..."
-	gitAddReturn=$( ${gitCommand} add -u )
+	gitAddReturn=$( git add -u )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -157,7 +157,7 @@ do
 
 	#Commit the modified pom files
 	echo -n "Commiting modified pom.xml files:..."
-	gitCommitReturn=$( ${gitCommand} commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")" 2>&1 )
+	gitCommitReturn=$( git commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -169,7 +169,7 @@ do
 
 	#Push the commit to the git repository
 	echo -n "Pushing the commit to the git repository:..."
-	gitPushReturn=$( ${gitCommand} push origin "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
+	gitPushReturn=$( git push origin "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
@@ -179,14 +179,14 @@ do
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
-	#The pull-request can bea created only if the used command is hub
-	if [[ "${gitCommand}" = "hub" ]]
+	#The pull-request can bea created only if GitHub hub command is installed
+	if [[ ! -z "${hubCommand}" ]]
 	then
 		declare version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
 		#Create the pull-request from the created branch on the main git branch
 		echo -n "Creating the associated GitHub pull-request:..."
-		hubPullRequestReturn=$( ${gitCommand} pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
+		hubPullRequestReturn=$( ${hubCommand} pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 		if [[ "${?}" -ne 0 ]]
 		then
 			echo -e "[\033[31mFAILED\033[0m]"
