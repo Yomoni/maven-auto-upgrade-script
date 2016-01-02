@@ -9,7 +9,8 @@
 #Disable git command prompt (since git 2.3)
 export export GIT_TERMINAL_PROMPT=0
 
-typeset -r scriptDir=$( dirname "${0}")
+cd $( dirname "${0}")
+typeset -r scriptDir="${PWD}"
 source "${scriptDir}/lib/git-lib.sh"
 
 #Main
@@ -33,12 +34,13 @@ then
 	usage
 	exit 0
 fi
+
 #Argument mapping
 declare -r gitHubRespositoryUrl="${1}"
 declare -r gitBranch="${2:-master}"
 declare -r cloneDirectory=$( basename "${gitHubRespositoryUrl%.git}" )
 
-#Clone directory clean up
+#Target clone directory clean up if it exists
 if [[ -e "${cloneDirectory}" ]]
 then
 	echo -n "Deleting existing ${PWD}/${cloneDirectory} file-directory:..."
@@ -61,14 +63,15 @@ then
 	echo "${cloneOutput}" >&2
 	exit 1
 fi
-echo -e "[\033[32mOK\033[0m]"
 
 cd "${cloneDirectory}" 2>/dev/null
 if [[ "${?}" -ne 0 ]]
 then
+	echo -e "[\033[31mFAILED\033[0m]"
 	echo "Cannot go into ${cloneDirectory} git clone directory" >&2
 	exit 1
 fi
+echo -e "[\033[32mOK\033[0m]"
 
 #Checking new component versions with Maven
 echo -n "Checking property version upgrades:..."
@@ -176,13 +179,14 @@ do
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
+	#The pull-request can bea created only if the used command is hub
 	if [[ "${gitCommand}" = "hub" ]]
 	then
 		declare version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
 		#Create the pull-request from the created branch on the main git branch
 		echo -n "Creating the associated GitHub pull-request:..."
-		hubPullRequestReturn=$( hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
+		hubPullRequestReturn=$( ${gitCommand} pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 		if [[ "${?}" -ne 0 ]]
 		then
 			echo -e "[\033[31mFAILED\033[0m]"
@@ -194,8 +198,11 @@ do
 	else
 		echo "Creating the associated GitHub pull-request:...[[\033[33mGitHub hub command not installed or found\033[0m]"
 	fi
+done
 
-	#Clone directory clean up
+#Clone directory clean up if no error occurs
+if [[ "${scriptReturnCode}" -eq 0 ]]
+then
 	#Return to the script directory
 	echo -n "Deleting clone ${scriptDir}/${cloneDirectory} directory:..."
 	cd "${scriptDir}"
@@ -203,8 +210,7 @@ do
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "Cannot return into ${scriptDir} script directory" >&2
-		scriptReturnCode=1
-		continue
+		exit 1
 	fi
 
 	#Delete the clone directory
@@ -213,11 +219,9 @@ do
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "${rmOutput}" >&2
-		scriptReturnCode=1
-		continue
+		exit 1
 	fi
 	echo -e "[\033[32mOK\033[0m]"
-
-done
+fi
 
 exit "${scriptReturnCode}"

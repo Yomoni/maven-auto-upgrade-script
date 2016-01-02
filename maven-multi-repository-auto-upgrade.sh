@@ -6,7 +6,8 @@
 #
 #UsageEnd
 
-typeset -r scriptDir=$( dirname "${0}")
+cd $( dirname "${0}")
+typeset -r scriptDir="${PWD}"
 source "${scriptDir}/lib/git-lib.sh"
 
 #Main
