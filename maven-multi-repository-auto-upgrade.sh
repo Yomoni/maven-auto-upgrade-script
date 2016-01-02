@@ -3,11 +3,14 @@
 #UsageStart
 #
 # Usage: $0 <https://github.com/account1/repository1.git> [<https://github.com/account2/repository2.git>, ... ]
+#        The cloned branch on these repositories is the master branch
 #
 #UsageEnd
 
+#Change current directory to the script one
 cd $( dirname "${0}")
 typeset -r scriptDir="${PWD}"
+#Source git function library
 source "${scriptDir}/lib/git-lib.sh"
 
 #Main
@@ -33,9 +36,10 @@ then
 	exit 1
 fi
 
+#Script return code
 typeset -i multiScriptReturnCode=0
 
-#Repository loop
+#Loop on repositories
 for gitRepository in ${*}
 do
 	echo -e "\nCheck Maven dependencies upgrades of ${gitRepository} repository"

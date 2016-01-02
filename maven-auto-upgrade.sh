@@ -6,8 +6,10 @@
 #
 #UsageEnd
 
+#Change current directory to the script one
 cd $( dirname "${0}")
 typeset -r scriptDir="${PWD}"
+#Source git function library
 source "${scriptDir}/lib/git-lib.sh"
 
 #Main
