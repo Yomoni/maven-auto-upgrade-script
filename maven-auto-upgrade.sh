@@ -2,7 +2,7 @@
 #
 #UsageStart
 #
-# Usage: $0 <https://github.com/account/repository.git> [<branch>]
+# Usage: $0 <https://github.com/account/repository.git|git directory> [<target branch>]
 #
 #UsageEnd
 
@@ -35,42 +35,82 @@ then
 fi
 
 #Argument mapping
-declare -r gitHubRespositoryUrl="${1}"
+declare -r gitRespository="${1}"
 declare -r gitBranch="${2:-master}"
-declare -r cloneDirectory=$( basename "${gitHubRespositoryUrl%.git}" )
 
-#Target clone directory clean up if it exists
-if [[ -e "${cloneDirectory}" ]]
+if [[ -d "${gitRespository}" ]]
 then
-	echo -n "Deleting existing ${PWD}/${cloneDirectory} file-directory:..."
-	rmOutput=$( rm -r "${cloneDirectory}" 0<&- 2>&1)
+	declare -r cloneDirectory="${gitRespository}"
+
+	#Go into the target directory
+	echo -n "Use target ${cloneDirectory} git repository:..."
+	cd "${cloneDirectory}" 2>/dev/null
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${rmOutput}" >&2
+		echo "Cannot go into ${cloneDirectory} git directory" >&2
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
+	#Checkout the target branch (default: master)
+	echo -n "Checkout of main branch ${gitBranch} on the ${gitRespository} git repository:..."
+	checkoutReturn=$( git checkout "${gitBranch}" 2>&1 )
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${checkoutReturn}" >&2
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
+	#Refresh the target git directory
+	echo -n "Refresh ${gitRespository} git repository:..."
+	cloneOutput=$( git pull 2>&1 )
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${cloneOutput}" >&2
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+else
+	declare -r cloneDirectory=$( basename "${gitRespository%.git}" )
+
+	#Target clone directory clean up if it exists
+	if [[ -e "${cloneDirectory}" ]]
+	then
+		echo -n "Deleting existing ${PWD}/${cloneDirectory} file-directory:..."
+		rmOutput=$( rm -r "${cloneDirectory}" 0<&- 2>&1)
+		if [[ "${?}" -ne 0 ]]
+		then
+			echo -e "[\033[31mFAILED\033[0m]"
+			echo "${rmOutput}" >&2
+			exit 1
+		fi
+		echo -e "[\033[32mOK\033[0m]"
+	fi
+
+	#Clone the target git repository
+	echo -n "Cloning $(echo ${gitRespository} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
+	cloneOutput=$( git clone --depth 1 --branch "${gitBranch}" "${gitRespository}" "${cloneDirectory}" 2>&1 )
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${cloneOutput}" >&2
+		exit 1
+	fi
+	
+	cd "${cloneDirectory}" 2>/dev/null
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "Cannot go into ${cloneDirectory} git clone directory" >&2
 		exit 1
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 fi
 
-#Clone the target git repository
-echo -n "Cloning $(echo ${gitHubRespositoryUrl} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
-cloneOutput=$( git clone --depth 1 --branch "${gitBranch}" "${gitHubRespositoryUrl}" "${cloneDirectory}" 2>&1 )
-if [[ "${?}" -ne 0 ]]
-then
-	echo -e "[\033[31mFAILED\033[0m]"
-	echo "${cloneOutput}" >&2
-	exit 1
-fi
-
-cd "${cloneDirectory}" 2>/dev/null
-if [[ "${?}" -ne 0 ]]
-then
-	echo -e "[\033[31mFAILED\033[0m]"
-	echo "Cannot go into ${cloneDirectory} git clone directory" >&2
-	exit 1
-fi
-echo -e "[\033[32mOK\033[0m]"
 
 #Checking new component versions with Maven
 echo -n "Checking property version upgrades:..."
@@ -199,8 +239,8 @@ do
 	fi
 done
 
-#Clone directory clean up if no error occurs
-if [[ "${scriptReturnCode}" -eq 0 ]]
+#Clone directory clean up if no error occurs and if it's a temporary clone
+if [[ "${scriptReturnCode}" -eq 0 && -d "${gitRespository}" ]]
 then
 	#Return to the script directory
 	echo -n "Deleting clone ${scriptDir}/${cloneDirectory} directory:..."

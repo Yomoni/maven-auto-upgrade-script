@@ -2,8 +2,8 @@
 #
 #UsageStart
 #
-# Usage: $0 <https://github.com/account1/repository1.git> [<https://github.com/account2/repository2.git>, ... ]
-#        The cloned branch on these repositories is the master branch
+# Usage: $0 <https://github.com/account1/repository1.git|git directory> [<https://github.com/account2/repository2.git|git directory>, ... ]
+#        The target branch on these repositories is the master branch
 #
 #UsageEnd
 
