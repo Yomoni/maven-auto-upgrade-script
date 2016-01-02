@@ -140,6 +140,7 @@ do
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
+	#Add modified pom files to staged files for the commit
 	echo -n "Adding modified pom.xml to commit files:..."
 	gitAddReturn=$( ${gitCommand} add -u )
 	if [[ "${?}" -ne 0 ]]
@@ -151,6 +152,7 @@ do
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
+	#Commit the modified pom files
 	echo -n "Commiting modified pom.xml files:..."
 	gitCommitReturn=$( ${gitCommand} commit -m "$(commitMessage "${property}" "${updateOutput}")" -m "$(commitDetails "${property}" "${updateOutput}")" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
@@ -162,6 +164,7 @@ do
 	fi
 	echo -e "[\033[32mOK\033[0m]"
 
+	#Push the commit to the git repository
 	echo -n "Pushing the commit to the git repository:..."
 	gitPushReturn=$( ${gitCommand} push origin "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
@@ -177,6 +180,7 @@ do
 	then
 		declare version=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/to/->/' )
 
+		#Create the pull-request from the created branch on the main git branch
 		echo -n "Creating the associated GitHub pull-request:..."
 		hubPullRequestReturn=$( hub pull-request  -m "${property} upgrade ${version}" -b "${gitBranch}" -h "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 		if [[ "${?}" -ne 0 ]]
@@ -185,8 +189,9 @@ do
 			echo "${hubPullRequestReturn}" >&2
 			scriptReturnCode=1
 		fi
-		echo -e "[\033[32mOK\033[0m]"
-		echo "${hubPullRequestReturn}" >&2
+		echo -e "[\033[32mOK\033[0m] -> ${hubPullRequestReturn}"
+	else
+		echo "Creating the associated GitHub pull-request:...[[\033[33mGitHub hub command not installed or found\033[0m]"
 	fi
 
 done
