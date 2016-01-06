@@ -38,7 +38,7 @@ fi
 declare -r gitRespository="${1}"
 declare -r gitBranch="${2:-master}"
 
-if [[ -d "${gitRespository}" ]]
+if [[ ! "${gitRespository}" = http* ]]
 then
 	declare -r cloneDirectory="${gitRespository}"
 
@@ -240,7 +240,7 @@ do
 done
 
 #Clone directory clean up if no error occurs and if it's a temporary clone
-if [[ "${scriptReturnCode}" -eq 0 && -d "${gitRespository}" ]]
+if [[ "${scriptReturnCode}" -eq 0 && "${gitRespository}" = http* ]]
 then
 	#Return to the script directory
 	echo -n "Deleting clone ${scriptDir}/${cloneDirectory} directory:..."
