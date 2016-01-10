@@ -134,17 +134,6 @@ do
 
 	echo -e "\nUpgrading ${property} property from $( echo ${versionDelta} | sed 's/->/to/' )"
 
-	#Check the existance of the remote branch before
-	declare targetbranchUpgrade="${property}_upgrade_"$( echo "${versionDelta}" | sed -e 's/ -> /_to_/g' )
-	echo -n "Checking existence of the remote branch ${targetbranchUpgrade}:..."
-	git ls-remote --heads 2>&1 | grep "${targetbranchUpgrade}" >/dev/null
-	if [[ "${?}" -eq 0 ]]
-	then
-		echo -e "[\033[33mALREADY EXISTS\033[0m] -> skipping this upgrade"
-		continue
-	fi
-	echo -e "[\033[32mOK\033[0m]"
-
 	#Get back to the pull-request target branch (default: master)
 	echo -n "Checkout of main branch ${gitBranch}:..."
 	checkoutReturn=$( git checkout "${gitBranch}" 2>&1 )
@@ -153,6 +142,17 @@ do
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "${checkoutReturn}" >&2
 		scriptReturnCode=1
+		continue
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
+	#Check the existance of the remote branch before
+	declare targetbranchUpgrade="${property}_upgrade_"$( echo "${versionDelta}" | sed -e 's/ -> /_to_/g' )
+	echo -n "Checking existence of the remote branch ${targetbranchUpgrade}:..."
+	git ls-remote --heads 2>&1 | grep "${targetbranchUpgrade}" >/dev/null
+	if [[ "${?}" -eq 0 ]]
+	then
+		echo -e "[\033[33mALREADY EXISTS\033[0m] -> skipping this upgrade"
 		continue
 	fi
 	echo -e "[\033[32mOK\033[0m]"
