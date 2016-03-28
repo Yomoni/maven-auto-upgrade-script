@@ -63,7 +63,7 @@
 
 <p>Check of dependencies upgrades on a remote git repository (with a temporary clone) or an local existing one can be done with this command:</p>
 
-<div class="highlight highlight-source-shell"><pre>maven-auto-upgrade.sh <span class="pl-k">&lt;</span>target git repository URL<span class="pl-k">|</span>git clone directory<span class="pl-k">&gt;</span> [<span class="pl-k">&lt;</span>target checked branch<span class="pl-k">&gt;</span>]</pre></div>
+<div class="highlight highlight-source-shell"><pre>maven-auto-upgrade.sh <span class="pl-k">&lt;</span>git repository URL<span class="pl-k">|</span>git directory<span class="pl-k">&gt;</span> [<span class="pl-k">&lt;</span>target branch<span class="pl-k">&gt;</span>]</pre></div>
 
 <p>If no target branch is specified, the default branch <em>master</em> is used. If the repository already exists, no <code>bash git pull</code> command is used to synchronize the repository.</p>
 
@@ -98,7 +98,7 @@ Deleting clone /cygdrive/c/maven-auto-upgrade-script/RundeckMonitor:...[OK]
 
 <p>The check of multiple existing/remote git repository can be done with this command:</p>
 
-<div class="highlight highlight-source-shell"><pre>maven-multi-repository-auto-upgrade.sh <span class="pl-k">&lt;</span>target git repository URL<span class="pl-k">|</span>git clone directory<span class="pl-k">&gt;</span> [<span class="pl-k">&lt;</span>target git repository URL<span class="pl-k">|</span>git clone directory<span class="pl-k">&gt;</span>] [...]</pre></div>
+<div class="highlight highlight-source-shell"><pre>maven-multi-repository-auto-upgrade.sh <span class="pl-k">&lt;</span>git repository URL<span class="pl-k">|</span>git directory<span class="pl-k">&gt;</span> [<span class="pl-k">&lt;</span>git repository URL<span class="pl-k">|</span>git directory<span class="pl-k">&gt;</span>] [...]</pre></div>
 
 <p>In multiple repository check, the default branche <em>master</em> is used</p>
 
@@ -138,7 +138,7 @@ Deleting clone /cygdrive/c/maven-auto-upgrade-script/aws-ec2-start-stop-tools di
 <h3>
 <a id="git-cannot-commit-to-the-cloned-repository" class="anchor" href="#git-cannot-commit-to-the-cloned-repository" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><em>git</em> cannot commit to the cloned repository</h3>
 
-<p>This error occurs</p>
+<p>This error occurs if no credentials/user settings are permanently used. Try to execute a <code>git push</code> command before executing the script to temporary remember GitHub access or <a href="https://help.github.com/articles/caching-your-github-password-in-git/">setup a git password cache</a>. </p>
 
 <h3>
 <a id="git-cannot-clone-private-repository" class="anchor" href="#git-cannot-clone-private-repository" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><em>git</em> cannot clone private repository</h3>
@@ -152,7 +152,7 @@ Cloning Sylvain-Bugat/private-repo repository:...[FAILED]
 Cloning into <span class="pl-s"><span class="pl-pds">'</span>private-repo<span class="pl-pds">'</span></span>...
 fatal: could not <span class="pl-c1">read</span> Username <span class="pl-k">for</span> <span class="pl-s"><span class="pl-pds">'</span>https://github.com<span class="pl-pds">'</span></span>: terminal prompts disabled</pre></div>
 
-<p>Same solution as the previous question, try to execute a <code>bash git push</code> command before executing the script to tempoprary remmber GitHub access.</p>
+<p>Same solution as the previous question, try to execute a <code>git push</code> command before executing the script to temporary remember GitHub access.</p>
 
 <h3>
 <a id="hub-cannot-create-the-pull-request-on-github" class="anchor" href="#hub-cannot-create-the-pull-request-on-github" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><em>hub</em> cannot create the pull request on GitHub</h3>
@@ -188,7 +188,7 @@ fatal: could not <span class="pl-c1">read</span> Username <span class="pl-k">for
 <h3>
 <a id="some-upgrade-are-not-detected" class="anchor" href="#some-upgrade-are-not-detected" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Some upgrade are not detected</h3>
 
-<p>These scripts uses <code>bash mvn versions:display-plugin-updates  versions:display-property-updates</code> to find dependency/plugin version upgrade. Dependency version with direct version configuration like this cannot be detected and upgraded:</p>
+<p>These scripts uses <code>mvn versions:display-plugin-updates  versions:display-property-updates</code> to find dependency/plugin version upgrade. Dependency version with direct version configuration like this cannot be detected and upgraded:</p>
 
 <div class="highlight highlight-text-xml"><pre>&lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;org.slf4j&lt;/<span class="pl-ent">groupId</span>&gt;
