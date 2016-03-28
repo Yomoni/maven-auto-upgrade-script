@@ -25,7 +25,7 @@ git clone https://github.com/Yomoni/maven-auto-upgrade-script.git
 
 Check of dependencies upgrades on a remote git repository (with a temporary clone) or an local existing one can be done with this command:
 ```bash
-maven-auto-upgrade.sh <target git repository URL|git clone directory> [<target checked branch>]
+maven-auto-upgrade.sh <git repository URL|git directory> [<target branch>]
 ```
 If no target branch is specified, the default branch _master_ is used. If the repository already exists, no ```bash git pull``` command is used to synchronize the repository.
 
@@ -60,7 +60,7 @@ Created pull request on this example: https://github.com/Sylvain-Bugat/RundeckMo
 
 The check of multiple existing/remote git repository can be done with this command:
 ```bash
-maven-multi-repository-auto-upgrade.sh <target git repository URL|git clone directory> [<target git repository URL|git clone directory>] [...]
+maven-multi-repository-auto-upgrade.sh <git repository URL|git directory> [<git repository URL|git directory>] [...]
 ```
 
 In multiple repository check, the default branche _master_ is used
@@ -101,7 +101,7 @@ Deleting clone /cygdrive/c/maven-auto-upgrade-script/aws-ec2-start-stop-tools di
 
 ### _git_ cannot commit to the cloned repository
 
-This error occurs
+This error occurs if no credentials/user settings are permanently used. Try to execute a ```git push``` command before executing the script to temporary remember GitHub access or [setup a git password cache](https://help.github.com/articles/caching-your-github-password-in-git/). 
 
 ### _git_ cannot clone private repository
 
@@ -114,7 +114,7 @@ Cloning Sylvain-Bugat/private-repo repository:...[FAILED]
 Cloning into 'private-repo'...
 fatal: could not read Username for 'https://github.com': terminal prompts disabled
 ```
-Same solution as the previous question, try to execute a ```bash git push``` command before executing the script to tempoprary remmber GitHub access.
+Same solution as the previous question, try to execute a ```git push``` command before executing the script to temporary remember GitHub access.
 
 ### _hub_ cannot create the pull request on GitHub
 
@@ -142,7 +142,7 @@ To ignore versions of dependencies and/or plugins, the versions plugin configura
 
 ### Some upgrade are not detected
 
-These scripts uses ```bash mvn versions:display-plugin-updates  versions:display-property-updates``` to find dependency/plugin version upgrade. Dependency version with direct version configuration like this cannot be detected and upgraded:
+These scripts uses ```mvn versions:display-plugin-updates  versions:display-property-updates``` to find dependency/plugin version upgrade. Dependency version with direct version configuration like this cannot be detected and upgraded:
 ```xml
 <dependency>
 	<groupId>org.slf4j</groupId>
