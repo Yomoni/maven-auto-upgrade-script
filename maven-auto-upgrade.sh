@@ -171,7 +171,7 @@ do
 
 	#Create and checkout a new branch for the property upgrade
 	declare branchVersionUpgrade=$( echo "${updateOutput}" | grep '^\[INFO\] Updated ${'"${property}"'}' | grep -o "[^ ]* to [^ ]*$" | sed 's/ /_/g' )
-	echo -n "Create and checkout branch ${branchVersionUpgrade}:..."
+	echo -n "Create and checkout branch ${property}_upgrade_${branchVersionUpgrade}:..."
 	checkoutReturn=$( git checkout --track -b "${property}_upgrade_${branchVersionUpgrade}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then

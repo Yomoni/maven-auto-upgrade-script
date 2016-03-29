@@ -106,7 +106,7 @@ function environmentCheck
 	if [[ "${gitVersion}" < "2.3" ]]
 	then
 		echo -e "[\033[33mOLD VERSION DETECTED\033[0m] -> "$( echo "${gitVersionOutput}" | grep "^git " )
-		echo "$0 optionaly needs git 2.3 version or greater for non-interactive git commands by using GIT_TERMINAL_PROMPT=0" >&2
+		echo "$0 optionally needs git 2.3 version or greater for non-interactive git commands by using GIT_TERMINAL_PROMPT=0" >&2
 	else
 		echo -e "[\033[32mOK\033[0m] -> "$( echo "${gitVersionOutput}" | grep "^git " )
 	fi
@@ -126,7 +126,7 @@ function environmentCheck
 		if [[ "${?}" -ne 0 ]]
 		then
 			echo -e "[\033[33mNOT FOUND\033[0m]"
-			echo "$0 optionaly needs GitHub hub command to create some pull-request (https://hub.github.com), check your GitHub Hub installation and the PATH environment variable" >&2
+			echo "$0 optionally needs GitHub hub command to create some pull-request (https://hub.github.com), check your GitHub Hub installation and the PATH environment variable" >&2
 		else
 			export hubCommand="hub"
 			echo -e "[\033[32mOK\033[0m] found hub command -> "$( echo "${hubVersionOutput}" | grep "^hub " )
