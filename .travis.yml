@@ -1,0 +1,4 @@
+language: bash
+
+script:
+   - bash maven-multi-repository-auto-upgrade.sh https://github.com/Sylvain-Bugat/RundeckMonitor.git
