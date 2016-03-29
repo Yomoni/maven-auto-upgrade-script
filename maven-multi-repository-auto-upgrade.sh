@@ -36,6 +36,12 @@ then
 	exit 1
 fi
 
+#Sub-script execution right check
+if [[ ! -x "${scriptDir}/maven-auto-upgrade.sh" ]]
+then
+	chmod u+x "${scriptDir}/maven-auto-upgrade.sh"
+fi
+
 #Script return code
 typeset -i multiScriptReturnCode=0
 
