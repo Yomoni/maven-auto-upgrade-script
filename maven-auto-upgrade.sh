@@ -35,47 +35,12 @@ then
 fi
 
 #Argument mapping
-declare -r gitRespository="${1}"
+declare -r gitRepository="${1}"
 declare -r gitBranch="${2:-master}"
 
-if [[ ! "${gitRespository}" = http* ]]
+if [[ "${gitRepository}" = http://* || "${gitRepository}" = https://* || "${gitRepository}" = ssh://* || "${gitRepository}" = *@* ]]
 then
-	declare -r cloneDirectory="${gitRespository}"
-
-	#Go into the target directory
-	echo -n "Use target ${cloneDirectory} git repository:..."
-	cd "${cloneDirectory}" 2>/dev/null
-	if [[ "${?}" -ne 0 ]]
-	then
-		echo -e "[\033[31mFAILED\033[0m]"
-		echo "Cannot go into ${cloneDirectory} git directory" >&2
-		exit 1
-	fi
-	echo -e "[\033[32mOK\033[0m]"
-
-	#Checkout the target branch (default: master)
-	echo -n "Checkout of main branch ${gitBranch} on the ${gitRespository} git repository:..."
-	checkoutReturn=$( git checkout "${gitBranch}" 2>&1 )
-	if [[ "${?}" -ne 0 ]]
-	then
-		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${checkoutReturn}" >&2
-		exit 1
-	fi
-	echo -e "[\033[32mOK\033[0m]"
-
-	#Refresh the target git directory
-	echo -n "Refresh ${gitRespository} git repository:..."
-	cloneOutput=$( git pull 2>&1 )
-	if [[ "${?}" -ne 0 ]]
-	then
-		echo -e "[\033[31mFAILED\033[0m]"
-		echo "${cloneOutput}" >&2
-		exit 1
-	fi
-	echo -e "[\033[32mOK\033[0m]"
-else
-	declare -r cloneDirectory=$( basename "${gitRespository%.git}" )
+	declare -r cloneDirectory=$( basename "${gitRepository%.git}" )
 
 	#Target clone directory clean up if it exists
 	if [[ -e "${cloneDirectory}" ]]
@@ -92,20 +57,56 @@ else
 	fi
 
 	#Clone the target git repository
-	echo -n "Cloning $(echo ${gitRespository} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
-	cloneOutput=$( git clone --depth 1 --branch "${gitBranch}" "${gitRespository}" "${cloneDirectory}" 2>&1 )
+	echo -n "Cloning $(echo ${gitRepository} | sed -e 's|https*://[^/]*/||' -e 's/.git$//' ) repository:..."
+	cloneOutput=$( git clone --depth 1 --branch "${gitBranch}" "${gitRepository}" "${cloneDirectory}" 2>&1 )
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "${cloneOutput}" >&2
 		exit 1
 	fi
-	
+
 	cd "${cloneDirectory}" 2>/dev/null
 	if [[ "${?}" -ne 0 ]]
 	then
 		echo -e "[\033[31mFAILED\033[0m]"
 		echo "Cannot go into ${cloneDirectory} git clone directory" >&2
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
+else
+	declare -r cloneDirectory="${gitRepository}"
+
+	#Go into the target directory
+	echo -n "Use target ${cloneDirectory} git repository:..."
+	cd "${cloneDirectory}" 2>/dev/null
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "Cannot go into ${cloneDirectory} git directory" >&2
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
+	#Checkout the target branch (default: master)
+	echo -n "Checkout of main branch ${gitBranch} on the ${gitRepository} git repository:..."
+	checkoutReturn=$( git checkout "${gitBranch}" 2>&1 )
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${checkoutReturn}" >&2
+		exit 1
+	fi
+	echo -e "[\033[32mOK\033[0m]"
+
+	#Refresh the target git directory
+	echo -n "Refresh ${gitRepository} git repository:..."
+	cloneOutput=$( git pull 2>&1 )
+	if [[ "${?}" -ne 0 ]]
+	then
+		echo -e "[\033[31mFAILED\033[0m]"
+		echo "${cloneOutput}" >&2
 		exit 1
 	fi
 	echo -e "[\033[32mOK\033[0m]"
@@ -240,7 +241,7 @@ do
 done
 
 #Clone directory clean up if no error occurs and if it's a temporary clone
-if [[ "${scriptReturnCode}" -eq 0 && "${gitRespository}" = http* ]]
+if [[ "${scriptReturnCode}" -eq 0 && "${gitRepository}" = http* ]]
 then
 	#Return to the script directory
 	echo -n "Deleting clone ${scriptDir}/${cloneDirectory} directory:..."
