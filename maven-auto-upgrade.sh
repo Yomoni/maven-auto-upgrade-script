@@ -128,7 +128,7 @@ echo -e "[\033[32mOK\033[0m] -> ${countUpgrade} upgrade(s) found"
 typeset -i scriptReturnCode=0
 
 #Loop on each property that can be upgraded
-echo "${versionOutput}" | grep -- "->" | grep '${' | while read line
+while read line
 do
 	declare property=$( echo "${line}" | awk '{print $2}' | sed -e 's/^${//' -e 's/}$//' )
 	declare versionDelta=$( echo "${line}" | awk '{ print $(NF-2),$(NF-1),$NF }' )
@@ -238,7 +238,7 @@ do
 	else
 		echo "Creating the associated GitHub pull-request:...[[\033[33mGitHub hub command not installed or found\033[0m]"
 	fi
-done
+done < <( echo "${versionOutput}" | grep -- "->" | grep '${' )
 
 #Clone directory clean up if no error occurs and if it's a temporary clone
 if [[ "${scriptReturnCode}" -eq 0 && "${gitRepository}" = http* ]]
