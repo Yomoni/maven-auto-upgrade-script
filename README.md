@@ -23,9 +23,9 @@ git clone https://github.com/Yomoni/maven-auto-upgrade-script.git
 
 ### Single repository check
 
-Check of dependencies upgrades on a remote git repository (with a temporary clone) or an local existing one can be done with this command:
+Check of dependencies upgrades on a remote git repository (with a temporary clone) or a local existing one can be done with this command:
 ```bash
-maven-auto-upgrade.sh <git repository URL|git directory> [<target branch>]
+maven-auto-upgrade.sh <git repository URL|git repository local directory> [<target branch>]
 ```
 If no target branch is specified, the default branch _master_ is used. If the repository already exists, no ```bash git pull``` command is used to synchronize the repository.
 
@@ -58,12 +58,12 @@ Created pull request on this example: https://github.com/Sylvain-Bugat/RundeckMo
 
 ### Multiple repository check
 
-The check of multiple existing/remote git repository can be done with this command:
+The check of multiple existing/remote git repositories can be done with this command:
 ```bash
 maven-multi-repository-auto-upgrade.sh <git repository URL|git directory> [<git repository URL|git directory>] [...]
 ```
 
-In multiple repository check, the default branche _master_ is used
+In multiple repositories check, the default branche _master_ is used
 
 Execution example command:
 ```bash
@@ -101,7 +101,7 @@ Deleting clone /cygdrive/c/maven-auto-upgrade-script/aws-ec2-start-stop-tools di
 
 ### _git_ cannot commit to the cloned repository
 
-This error occurs if no credentials/user settings are permanently used. Try to execute a ```git push``` command before executing the script to temporary remember GitHub access or [setup a git password cache](https://help.github.com/articles/caching-your-github-password-in-git/). 
+This error occurs if no credentials/user settings are permanently used. Try to execute a ```git push``` command before executing the script to temporary remember GitHub access or [setup a git password cache](https://help.github.com/articles/caching-your-github-password-in-git/) or use SSH repository URL with a default accepted SSH key. 
 
 ### _git_ cannot clone private repository
 
@@ -114,7 +114,7 @@ Cloning Sylvain-Bugat/private-repo repository:...[FAILED]
 Cloning into 'private-repo'...
 fatal: could not read Username for 'https://github.com': terminal prompts disabled
 ```
-Same solution as the previous question, try to execute a ```git push``` command before executing the script to temporary remember GitHub access.
+Same possible solutions as the previous question.
 
 ### _hub_ cannot create the pull request on GitHub
 
@@ -126,23 +126,24 @@ If it's the first hub execution, user name/password are required to create to re
 
 ### Upgrade I refuse/don't want are spammed
 
-At each execution a pull request is created if a new version is found and if an existing branch with the same version upgread is not already found.
+At each execution a pull request is created if a new version is found and if an existing branch with the same version upgrade is not already found.
 
-If you don't want an upgrade or you don't want to apply it right now you can keep the associated branch alive as long as you want. But for some strange/incompatible version the dependency version may be completely ignored.
+If you don't want an upgrade or you don't want to apply it right now you can keep the associated branch alive as long as you want. But for some strange/incompatible version the dependency version must be completely ignored.
 
 ### Not release version upgrade are generated
 
-There are some case were not release version are detected even if only release repostory are used:
+There are some case were pre-release versions are detected even if only release repositories are used:
 * Alpha/beta versions (A)
 * Release canditate versions (RC)
 * Draft versions
 * Milestone versions (M)
+Because these versions are published on release repositories for public tests.
  
-To ignore versions of dependencies and/or plugins, the versions plugin configuration can be modified. Such configuration example on [Rundeck Monitor](https://github.com/Sylvain-Bugat/RundeckMonitor/blob/master/dependencies-check-rules.xml).
+To ignore some dependencies/plugins versions, the Maven versions plugin configuration can be modified. Example of Such configuration  on [Rundeck Monitor](https://github.com/Sylvain-Bugat/RundeckMonitor/blob/master/dependencies-check-rules.xml).
 
 ### Some upgrade are not detected
 
-These scripts uses ```mvn versions:display-plugin-updates  versions:display-property-updates``` to find dependency/plugin version upgrade. Dependency version with direct version configuration like this cannot be detected and upgraded:
+This is a limitation of these scripts, they uses ```mvn versions:display-plugin-updates  versions:display-property-updates``` to find dependency/plugin version upgrades. Dependencies with direct version configuration like this cannot be detected and upgraded:
 ```xml
 <dependency>
 	<groupId>org.slf4j</groupId>
@@ -151,9 +152,22 @@ These scripts uses ```mvn versions:display-plugin-updates  versions:display-prop
 </dependency>
 ```
 
+To fix that, the version must be in a property value like this:
+```xml
+<properties>
+	<org.slf4j.version>1.7.19</org.slf4j.version>
+</properties>
+...
+<dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-ext</artifactId>
+	<version>${org.slf4j.version}</version>
+</dependency>
+```
+
 ### My git repository is not on GitHub
 
-These scripts can be used without the [_hub_](https://hub.github.com/) command, in this case, branch with new dependecy/plugin version are commited be no associted pull request can be created and the merge must be done manually.
+These scripts can be used without the [_hub_](https://hub.github.com/) command, in this case, branch with new dependency/plugin version are commited but no pull-request can be created on GitHub.
 
 ### Another issue/bug, feature requests or questions?
 
@@ -165,4 +179,4 @@ Issues, bugs, and feature requests should be submitted on [GitHub maven-auto-upg
 * [Versions Maven plugin](http://www.mojohaus.org/versions-maven-plugin/) :arrow_double_up:
 * [_git_](https://git-scm.com/) and [_hub_](https://hub.github.com/) :smirk:
 * [GitHub](https://github.com/) :laughing:
-* [Yomoni](https://www.yomoni.fr/) :moneybag:
+* [Yomoni](https://www.yomoni.fr/?parrain=SYLVAIN01) :moneybag:
