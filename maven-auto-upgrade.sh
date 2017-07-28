@@ -150,7 +150,7 @@ do
 	#Check the existance of the remote branch before
 	declare targetbranchUpgrade="${property}_upgrade_"$( echo "${versionDelta}" | sed -e 's/ -> /_to_/g' )
 	echo -n "Checking existence of the remote branch ${targetbranchUpgrade}:..."
-	git ls-remote --heads 2>&1 | grep "${targetbranchUpgrade}" >/dev/null
+	git ls-remote --heads 2>&1 | grep --silent "/${targetbranchUpgrade}$"
 	if [[ "${?}" -eq 0 ]]
 	then
 		echo -e "[\033[33mALREADY EXISTS\033[0m] -> skipping this upgrade"
